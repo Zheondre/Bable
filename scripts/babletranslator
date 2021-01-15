@@ -1,0 +1,81 @@
+#!/bin/bash
+#
+
+### BEGIN INIT INFO
+# Provides:          babletranslator
+# Required-Start:    $local_fs $network $named $time $syslog
+# Required-Stop:     $local_fs $network $named $time $syslog
+# X-Start-Before:
+# Default-Start:      2 3 4 5
+# Default-Stop:       0 1 6
+# Short-Description: translator
+# Description:  scripts starts the translator program at boot
+### END INIT INFO
+
+# Get function from functions library
+. /lib/lsb/init-functions
+
+# Start the service cserver
+start() {
+
+systemctl daemon-reload
+/etc/init.d/networking restart
+
+
+    #echo" In Start"
+
+                ifconfig can0 down
+                #echo" In taking can down"
+
+            ip link set can0 up type can bitrate 250000
+                #echo" seting up bitrate"
+
+            ifconfig can0 up
+                #echo" putting can0 up "
+
+        #initlog -c "echo -n Starting cserver: "
+                /home/debian/can-utils/cserver &
+
+        ### Create the lock file ###
+                touch /var/lock/subsys/cserver
+
+       # success $"cserver startup"
+        #echo
+
+}
+
+# Restart the service FOO
+stop() {
+       # initlog -c "echo -n Stopping cserver: "
+    #killall cserver
+    #killproc cserver
+     
+ kill $(ps aux | grep 'cserver' | awk '{print $2}')
+
+	 ### Now, delete the lock file ###
+        rm -f /var/lock/subsys/cserver
+        #echo
+}
+
+### main logic ###
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status FOO
+        ;;
+  restart|reload|condrestart)
+        stop
+        start
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|reload|status}"
+        exit 1
+esac
+
+exit 0
+
